@@ -179,29 +179,6 @@ func (e *Edges) outputRandomPairs(filename string, num int, abFn func(e *Edges) 
 }
 
 func (e *Edges) OutputRandomPositivePairs(filename string, num int) {
-	//f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0755)
-	//if check(err, "OutputRandomPositivePairs") {
-	//	return
-	//}
-	//defer f.Close()
-	//
-	//cnt := 0
-	////for cnt < ID_COUNT {
-	//m := make(map[string]struct{})
-	//for cnt < num {
-	//	a := e.followerIds[rand.Intn(len(e.followerIds))]
-	//	if len(e.train[a]) == 0 {
-	//		continue
-	//	}
-	//	b := e.train[a][rand.Intn(len(e.train[a]))]
-	//	k := strings.Join(IntsToStrings([]int{a, b}), ".")
-	//	if _, ok := m[k]; ok {
-	//		continue
-	//	}
-	//	m[k] = struct{}{}
-	//	fmt.Fprintln(f, a, b)
-	//	cnt ++
-	//}
 	e.outputRandomPairs(filename, num, func(e *Edges) (a, b int, retry bool) {
 		a = e.followerIds[rand.Intn(len(e.followerIds))]
 		if len(e.train[a]) == 0 {
@@ -214,24 +191,6 @@ func (e *Edges) OutputRandomPositivePairs(filename string, num int) {
 }
 
 func (e *Edges) OutputRandomNegativePairs(filename string, num int) {
-	//f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0755)
-	//if check(err, "OutputRandomNegativePairs") {
-	//	return
-	//}
-	//defer f.Close()
-	//
-	//cnt := 0
-	//m := make(map[string]struct{})
-	//for cnt < num {
-	//
-	//	k := strings.Join(IntsToStrings([]int{a, b}), ".")
-	//	if _, ok := m[k]; ok {
-	//		continue
-	//	}
-	//	m[k] = struct{}{}
-	//	fmt.Fprintln(f, a, b)
-	//	cnt ++
-	//}
 	e.outputRandomPairs(filename, num, func(e *Edges) (a, b int, retry bool) {
 		a = rand.Intn(ID_COUNT)
 		b = rand.Intn(ID_COUNT)
