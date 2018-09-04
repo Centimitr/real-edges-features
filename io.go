@@ -103,7 +103,7 @@ func (e *Edges) ReadTestSetAndGenerateNegatives(inPath string, outPath string) {
 	defer out.Close()
 
 	i := 0
-	for vs := range ProcessCSV(csvf) {
+	for vs := range CSVToChan(csvf) {
 		//if i < 2 {
 		//vs := strings.Split(v[0], "	")
 		a, _ := strconv.Atoi(vs[1])
@@ -152,22 +152,92 @@ func (e *Edges) LoadAllIds(filename string) {
 	e.allIds = StringsToInts(strings.Split(string(byts), " "))
 }
 
-func (e *Edges) OutputRandomNegativePairs(filename string, num int) {
+func (e *Edges) outputRandomPairs(filename string, num int, abFn func(e *Edges) (a, b int, retry bool)) {
 	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0755)
-	if err != nil {
-		fmt.Println("OutputRandomNegativePairs:", err)
+	if check(err, "outputRandomPairs") {
 		return
 	}
 	defer f.Close()
+
 	cnt := 0
 	//for cnt < ID_COUNT {
+	m := make(map[string]struct{})
 	for cnt < num {
-		a := rand.Intn(ID_COUNT)
-		b := rand.Intn(ID_COUNT)
-		if _, ok := e.train[a]; !ok {
+		var a, b int
+		retry := true
+		for retry {
+			a, b, retry = abFn(e)
+		}
+		k := strings.Join(IntsToStrings([]int{a, b}), ".")
+		if _, ok := m[k]; ok {
 			continue
 		}
+		m[k] = struct{}{}
 		fmt.Fprintln(f, a, b)
 		cnt ++
 	}
+}
+
+func (e *Edges) OutputRandomPositivePairs(filename string, num int) {
+	//f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0755)
+	//if check(err, "OutputRandomPositivePairs") {
+	//	return
+	//}
+	//defer f.Close()
+	//
+	//cnt := 0
+	////for cnt < ID_COUNT {
+	//m := make(map[string]struct{})
+	//for cnt < num {
+	//	a := e.followerIds[rand.Intn(len(e.followerIds))]
+	//	if len(e.train[a]) == 0 {
+	//		continue
+	//	}
+	//	b := e.train[a][rand.Intn(len(e.train[a]))]
+	//	k := strings.Join(IntsToStrings([]int{a, b}), ".")
+	//	if _, ok := m[k]; ok {
+	//		continue
+	//	}
+	//	m[k] = struct{}{}
+	//	fmt.Fprintln(f, a, b)
+	//	cnt ++
+	//}
+	e.outputRandomPairs(filename, num, func(e *Edges) (a, b int, retry bool) {
+		a = e.followerIds[rand.Intn(len(e.followerIds))]
+		if len(e.train[a]) == 0 {
+			retry = true
+			return
+		}
+		b = e.train[a][rand.Intn(len(e.train[a]))]
+		return
+	})
+}
+
+func (e *Edges) OutputRandomNegativePairs(filename string, num int) {
+	//f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0755)
+	//if check(err, "OutputRandomNegativePairs") {
+	//	return
+	//}
+	//defer f.Close()
+	//
+	//cnt := 0
+	//m := make(map[string]struct{})
+	//for cnt < num {
+	//
+	//	k := strings.Join(IntsToStrings([]int{a, b}), ".")
+	//	if _, ok := m[k]; ok {
+	//		continue
+	//	}
+	//	m[k] = struct{}{}
+	//	fmt.Fprintln(f, a, b)
+	//	cnt ++
+	//}
+	e.outputRandomPairs(filename, num, func(e *Edges) (a, b int, retry bool) {
+		a = rand.Intn(ID_COUNT)
+		b = rand.Intn(ID_COUNT)
+		if _, ok := e.train[a]; !ok {
+			retry = true
+		}
+		return
+	})
 }

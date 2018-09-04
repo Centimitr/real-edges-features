@@ -8,9 +8,10 @@ import (
 )
 
 type Edges struct {
-	train     map[int][]int
-	LinkCount int
-	allIds    []int
+	train       map[int][]int
+	LinkCount   int
+	allIds      []int
+	followerIds []int
 }
 
 func (e *Edges) ReadTrainSet(filename string) {
@@ -20,6 +21,7 @@ func (e *Edges) ReadTrainSet(filename string) {
 	}
 	lines := strings.Split(string(txt), "\r\n")
 	e.train = make(map[int][]int, len(lines))
+	e.followerIds = []int{}
 	linkCount := 0
 	for _, l := range lines {
 		if l == "" {
@@ -41,6 +43,7 @@ func (e *Edges) ReadTrainSet(filename string) {
 			followings[i] = following
 		}
 		e.train[cur] = followings
+		e.followerIds = append(e.followerIds, cur)
 	}
 	e.LinkCount = linkCount
 }

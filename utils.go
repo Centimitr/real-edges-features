@@ -40,7 +40,7 @@ func BoolToInt(v bool, t int, f int) int {
 	return f
 }
 
-func ProcessCSV(rc io.Reader) (ch chan []string) {
+func CSVToChan(rc io.Reader) (ch chan []string) {
 	ch = make(chan []string, 10)
 	go func() {
 		r := csv.NewReader(rc)
@@ -71,8 +71,27 @@ func check(err error, s string) bool {
 	return false
 }
 
+func SplitAndTrimSpace(s string, sep string) []string {
+	vs := strings.Split(s, sep)
+	for i, v := range vs {
+		vs[i] = strings.TrimSpace(v)
+	}
+	return vs
+}
+
 func CombineMultipleCSV(dir string, out string) {
 	var m map[string]map[string]string
+	extractPairKey := func(vs []string) string {
+		a, b := vs[1], vs[2]
+		return a + "->" + b
+	}
+	getABFromPairKey := func(k string) (a, b string) {
+		kvs := strings.Split(k, "->")
+		a, b = kvs[0], kvs[1]
+		return
+	}
+
+	// collect csv files and fill in map
 	first := true
 	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if strings.HasSuffix(info.Name(), ".csv") {
@@ -80,29 +99,27 @@ func CombineMultipleCSV(dir string, out string) {
 			if check(err, "CombineMultipleCSV.ReadFile") {
 				return err
 			}
+
 			lines := strings.Split(string(byts), "\r\n")
 			if first {
 				m = make(map[string]map[string]string, len(lines)-1)
 				for _, line := range lines[1:] {
-					vs := strings.Split(line, ",")
+					vs := SplitAndTrimSpace(line, ",")
 					if len(vs) < 3 {
 						continue
 					}
-					a, b := vs[1], vs[2]
-					k := a + "->" + b
-					m[k] = make(map[string]string)
+					m[extractPairKey(vs)] = make(map[string]string)
 				}
 				first = false
 			}
-			heading := strings.Split(lines[0], ",")
+			heading := SplitAndTrimSpace(lines[0], ",")
 			featureNames := heading[3:]
 			for _, line := range lines[1:] {
-				vs := strings.Split(line, ",")
+				vs := SplitAndTrimSpace(line, ",")
 				if len(vs) < len(heading) {
 					continue
 				}
-				a, b := vs[1], vs[2]
-				k := a + "->" + b
+				k := extractPairKey(vs)
 				vs = vs[3:]
 				for i, name := range featureNames {
 					m[k][name] = vs[i]
@@ -112,11 +129,14 @@ func CombineMultipleCSV(dir string, out string) {
 		return err
 	})
 
+	// open output file
 	f, err := os.OpenFile(out, os.O_RDWR|os.O_CREATE, 0755)
 	if check(err, "CombineMultipleCSV.out") {
 		return
 	}
 	defer f.Close()
+
+	// write map to output file
 	w := csv.NewWriter(f)
 	first = true
 	var allFeatureNames []string
@@ -132,8 +152,7 @@ func CombineMultipleCSV(dir string, out string) {
 			w.Write(append([]string{"source", "sink"}, allFeatureNames...))
 			first = false
 		}
-		kvs := strings.Split(k, "->")
-		a, b := kvs[0], kvs[1]
+		a, b := getABFromPairKey(k)
 		values := make([]string, len(allFeatureNames))
 		i := 0
 		for _, name := range allFeatureNames {
