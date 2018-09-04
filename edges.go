@@ -8,8 +8,9 @@ import (
 )
 
 type Edges struct {
-	train  map[int][]int
-	allIds []int
+	train     map[int][]int
+	LinkCount int
+	allIds    []int
 }
 
 func (e *Edges) ReadTrainSet(filename string) {
@@ -41,6 +42,7 @@ func (e *Edges) ReadTrainSet(filename string) {
 		}
 		e.train[cur] = followings
 	}
+	e.LinkCount = linkCount
 }
 
 func (e *Edges) followings(id int) []int {

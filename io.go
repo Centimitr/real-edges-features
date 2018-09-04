@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"sort"
 	"strconv"
@@ -149,4 +150,24 @@ func (e *Edges) LoadAllIds(filename string) {
 		return
 	}
 	e.allIds = StringsToInts(strings.Split(string(byts), " "))
+}
+
+func (e *Edges) OutputRandomNegativePairs(filename string, num int) {
+	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0755)
+	if err != nil {
+		fmt.Println("OutputRandomNegativePairs:", err)
+		return
+	}
+	defer f.Close()
+	cnt := 0
+	//for cnt < ID_COUNT {
+	for cnt < num {
+		a := rand.Intn(ID_COUNT)
+		b := rand.Intn(ID_COUNT)
+		if _, ok := e.train[a]; !ok {
+			continue
+		}
+		fmt.Fprintln(f, a, b)
+		cnt ++
+	}
 }
