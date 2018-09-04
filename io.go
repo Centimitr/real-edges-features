@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/csv"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -162,6 +163,9 @@ func (e *Edges) outputRandomPairs(filename string, num int, abFn func(e *Edges) 
 	cnt := 0
 	//for cnt < ID_COUNT {
 	m := make(map[string]struct{})
+	w := csv.NewWriter(f)
+	w.Comma = '\t'
+	w.Write([]string{"Id", "Source", "Sink"})
 	for cnt < num {
 		var a, b int
 		retry := true
@@ -173,9 +177,10 @@ func (e *Edges) outputRandomPairs(filename string, num int, abFn func(e *Edges) 
 			continue
 		}
 		m[k] = struct{}{}
-		fmt.Fprintln(f, a, b)
+		w.Write(IntsToStrings([]int{cnt + 1, a, b}))
 		cnt ++
 	}
+	w.Flush()
 }
 
 func (e *Edges) OutputRandomPositivePairs(filename string, num int) {
@@ -194,7 +199,7 @@ func (e *Edges) OutputRandomNegativePairs(filename string, num int) {
 	e.outputRandomPairs(filename, num, func(e *Edges) (a, b int, retry bool) {
 		a = rand.Intn(ID_COUNT)
 		b = rand.Intn(ID_COUNT)
-		if _, ok := e.train[a]; !ok {
+		if _, exists := e.train[a]; exists {
 			retry = true
 		}
 		return
