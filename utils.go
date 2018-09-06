@@ -80,6 +80,10 @@ func SplitAndTrimSpace(s string, sep string) []string {
 }
 
 func CombineMultipleCSV(dir string, out string) {
+	CombineMultipleCSVByPrefix(dir, out, "")
+}
+
+func CombineMultipleCSVByPrefix(dir string, out string, prefix string) {
 	var m map[string]map[string]string
 	extractPairKey := func(vs []string) string {
 		a, b := vs[1], vs[2]
@@ -94,6 +98,9 @@ func CombineMultipleCSV(dir string, out string) {
 	// collect csv files and fill in map
 	first := true
 	filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if prefix != "" && !strings.HasPrefix(info.Name(), prefix) {
+			return nil
+		}
 		if strings.HasSuffix(info.Name(), ".csv") {
 			byts, err := ioutil.ReadFile(path)
 			if check(err, "CombineMultipleCSV.ReadFile") {
@@ -131,6 +138,7 @@ func CombineMultipleCSV(dir string, out string) {
 
 	// open output file
 	f, err := os.OpenFile(out, os.O_RDWR|os.O_CREATE, 0755)
+	fmt.Println(out)
 	if check(err, "CombineMultipleCSV.out") {
 		return
 	}

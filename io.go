@@ -195,13 +195,43 @@ func (e *Edges) OutputRandomPositivePairs(filename string, num int) {
 	})
 }
 
-func (e *Edges) OutputRandomNegativePairs(filename string, num int) {
+func (e *Edges) OutputRandomNegativePairsStrict(filename string, num int) {
 	e.outputRandomPairs(filename, num, func(e *Edges) (a, b int, retry bool) {
-		a = rand.Intn(ID_COUNT)
-		b = rand.Intn(ID_COUNT)
+		a = rand.Intn(IdCount)
+		b = rand.Intn(IdCount)
 		if _, exists := e.train[a]; exists {
 			retry = true
 		}
 		return
 	})
+}
+
+func (e *Edges) OutputRandomNegativePairs(filename string, num int) {
+	e.outputRandomPairs(filename, num, func(e *Edges) (a, b int, retry bool) {
+		a = rand.Intn(IdCount)
+		b = rand.Intn(IdCount)
+		if followings, exists := e.train[a]; exists {
+			for _, f := range followings {
+				if b == f {
+					retry = true
+					return
+				}
+			}
+		}
+		return
+	})
+}
+
+func (e *Edges) ReadPairsFromCSV(filename string) chan *EdgeLink {
+	ch := make(chan *EdgeLink)
+	f, err := os.Open(filename)
+	if check(err, "ReadPairsFromCSV") {
+		return nil
+	}
+	for vs := range CSVToChan(f) {
+		a, _ := strconv.Atoi(vs[1])
+		b, _ := strconv.Atoi(vs[2])
+		ch <- &EdgeLink{a, b}
+	}
+	return ch
 }
